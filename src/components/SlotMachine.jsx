@@ -6,7 +6,7 @@ import QRCode from "react-qr-code";
 import confetti from 'canvas-confetti';
 import Reel from './Reel';
 
-// --- TUS ARCHIVOS LOCALES (La versión que sí funcionaba) ---
+// TUS ARCHIVOS LOCALES (La versión rápida y estable)
 const AUDIO_SRC = {
   spin: '/sounds/spin.wav',
   win: '/sounds/win.wav',
@@ -14,25 +14,27 @@ const AUDIO_SRC = {
 };
 
 const SlotMachine = ({ config }) => {
+  // Estados
   const [gameState, setGameState] = useState('idle'); 
   const [email, setEmail] = useState('');
+  const [errorMsg, setErrorMsg] = useState(''); // Para el mensaje de error de email
   const [attempts, setAttempts] = useState(3);
   const [reels, setReels] = useState(['7️⃣', '7️⃣', '7️⃣']);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [prizeLevel, setPrizeLevel] = useState('none');
   const [consolationPercent, setConsolationPercent] = useState(5);
-  const [errorMsg, setErrorMsg] = useState(''); // Estado para el error de email
 
-  // Referencias de Audio
+  // Referencias de Audio (El método que funcionaba bien)
   const audioRefs = useRef({
     spin: null,
     win: null,
     lose: null
   });
 
-  // --- INICIALIZACIÓN DE AUDIO (Restaurada a la versión funcional) ---
+  // --- 1. INICIALIZACIÓN DE AUDIO ---
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Creamos los objetos de audio una sola vez
       audioRefs.current.spin = new Audio(AUDIO_SRC.spin);
       audioRefs.current.spin.loop = true; 
       audioRefs.current.spin.volume = 0.6;
@@ -59,11 +61,12 @@ const SlotMachine = ({ config }) => {
   };
   const expiryDate = getExpiryDate();
 
-  // --- REPRODUCTOR ---
+  // --- 2. CONTROL DE AUDIO ---
   const playSound = (type) => {
     if (!soundEnabled) return;
+    
     const audio = audioRefs.current[type];
-
+    
     // Detener otros
     Object.values(audioRefs.current).forEach(a => {
         if (a && a !== audio) {
@@ -73,9 +76,11 @@ const SlotMachine = ({ config }) => {
     });
 
     if (audio) {
-        if (type !== 'spin') audio.currentTime = 0;
+        if (type === 'spin') audio.currentTime = 0;
         const promise = audio.play();
-        if (promise !== undefined) promise.catch(() => {});
+        if (promise !== undefined) {
+            promise.catch(e => console.log("Audio esperando interacción...", e));
+        }
     }
   };
 
@@ -87,10 +92,12 @@ const SlotMachine = ({ config }) => {
       }
   };
 
-  // Desbloqueo de audio al tocar
+  // Desbloqueo silencioso para móviles
   const unlockAudio = () => {
       Object.values(audioRefs.current).forEach(audio => {
-          if (audio) audio.play().then(() => audio.pause()).catch(() => {});
+          if (audio) {
+              audio.play().then(() => audio.pause()).catch(() => {});
+          }
       });
   };
 
@@ -113,13 +120,13 @@ const SlotMachine = ({ config }) => {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  // --- NUEVA LÓGICA: EL CHECK DE EMAIL SE HACE AL DESBLOQUEAR, NO AL GIRAR ---
+  // --- 3. LÓGICA DE MAIL (SOLO AL ENTRAR) ---
   const handleUnlockGame = () => {
     unlockAudio(); // Aprovechamos el clic para activar audio
 
     if (!isValidEmail) return;
 
-    // 1. Verificar si ya jugó
+    // Verificar en localStorage si ya jugó
     const storageKey = `played_emails_${config.brandName}`;
     const playedEmails = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
@@ -128,20 +135,21 @@ const SlotMachine = ({ config }) => {
         return;
     }
 
-    // 2. Si es nuevo, guardamos el mail AHORA y permitimos jugar los 3 intentos
+    // Si es nuevo, lo guardamos y pasamos a estado 'ready' (listo para girar 3 veces)
     playedEmails.push(email.toLowerCase());
     localStorage.setItem(storageKey, JSON.stringify(playedEmails));
-
+    
+    setErrorMsg(''); // Limpiar error si lo hubo
     setGameState('ready');
   };
 
+  // --- 4. LÓGICA DE GIRO ---
   const handleSpin = (isRisking = false) => {
-    // Aquí YA NO chequeamos el mail, solo los intentos
     if (gameState === 'spinning' || attempts <= 0) return;
-
+    
     setGameState('spinning');
-
-    if (audioRefs.current.spin) audioRefs.current.spin.volume = 0.8;
+    
+    // SONIDO
     playSound('spin');
 
     setTimeout(() => {
@@ -164,7 +172,6 @@ const SlotMachine = ({ config }) => {
           finalSymbols = ['🍒', '🍒', '🍇'];
           nextState = 'ready';
           setAttempts(prev => prev - 1);
-          // Sin sonido aquí para revancha rápida
         }
       } else {
         if (isWin) {
@@ -182,14 +189,15 @@ const SlotMachine = ({ config }) => {
            playSound('lose');
         }
       }
-
+      
+      // Si se acabaron los intentos y no ganó
       if (!isRisking && nextState === 'ready' && attempts - 1 <= 0) {
           nextState = 'lost';
           setPrizeLevel('consolation');
           setConsolationPercent(Math.floor(Math.random() * (10 - 5 + 1)) + 5);
           playSound('lose');
       }
-
+      
       setReels(finalSymbols);
       setGameState(nextState);
     }, 4500); 
@@ -222,7 +230,7 @@ const SlotMachine = ({ config }) => {
     if (gameState === 'won') {
        const prizeText = prizeLevel === 'big' ? config.prizeTextBig : config.prizeTextSmall;
        const qrValue = `${typeof window !== 'undefined' ? window.location.origin : ''}/?mode=ticket&prize=${encodeURIComponent(prizeText)}&brand=${encodeURIComponent(config.brandName)}&expires=${encodeURIComponent(expiryDate)}`;
-
+       
        return (
         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="w-full text-center">
            <div className="bg-emerald-900/50 border border-emerald-500/30 p-6 rounded-2xl relative">
@@ -235,7 +243,7 @@ const SlotMachine = ({ config }) => {
                 </div>
                 <div className="space-y-2">
                    <div className="text-[10px] text-emerald-400 uppercase font-bold">Guarda este cupón</div>
-                   <div className="text-[10px] text-emerald-500/60 flex items-center justify-center gap-1"><Clock size={10}/> Canjéalo antes del: <span className="text-white">{expiryDate}</span></div>
+                   <div className="text-[10px] text-emerald-500/60 flex items-center justify-center gap-1"><Clock size={10}/> Vence el: {expiryDate}</div>
                    <button onClick={shareOnWhatsApp} className="flex items-center justify-center gap-2 w-full py-2 bg-[#25D366] text-black font-bold rounded-lg text-xs mt-3">
                       <Share2 size={14} /> Contar a amigos
                    </button>
@@ -247,7 +255,7 @@ const SlotMachine = ({ config }) => {
     }
     if (gameState === 'lost') {
       const qrValue = `${typeof window !== 'undefined' ? window.location.origin : ''}/?mode=ticket&discount=${consolationPercent}&brand=${encodeURIComponent(config.brandName)}&expires=${encodeURIComponent(expiryDate)}`;
-
+      
       return (
         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="w-full text-center">
            <div className="bg-neutral-900 border border-white/10 p-6 rounded-2xl relative">
@@ -259,7 +267,7 @@ const SlotMachine = ({ config }) => {
              <div className="bg-white/10 py-1 px-3 rounded-full text-sm text-white inline-block mt-2">
                 TU CUPÓN: <b>{consolationPercent}% OFF</b>
              </div>
-             <div className="text-[10px] text-neutral-600 flex items-center justify-center gap-1 mt-3"><Clock size={10}/> Vence el: <span className="text-neutral-400">{expiryDate}</span></div>
+             <div className="text-[10px] text-neutral-600 flex items-center justify-center gap-1 mt-3"><Clock size={10}/> Vence el: {expiryDate}</div>
            </div>
         </motion.div>
        );
@@ -284,7 +292,8 @@ const SlotMachine = ({ config }) => {
               />
            </div>
          )}
-
+         
+         {/* Mensaje de Error si el mail ya jugó */}
          {errorMsg && (
              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-3 rounded-lg border border-red-500/20">
                 <AlertCircle size={14} /> {errorMsg}
@@ -293,7 +302,7 @@ const SlotMachine = ({ config }) => {
 
          {(gameState === 'idle' || gameState === 'ready') && (
            <button 
-             // AQUÍ CAMBIÓ: Ahora llama a handleUnlockGame en vez de setGameState directo
+             // LÓGICA CORREGIDA: Si es idle -> valida mail. Si es ready -> gira.
              onClick={gameState === 'idle' ? handleUnlockGame : () => handleSpin(false)}
              disabled={gameState === 'idle' && !isValidEmail} 
              className={cn("w-full py-4 rounded-xl font-black text-sm tracking-[0.2em] uppercase bg-gradient-to-b from-indigo-500 to-indigo-700 text-white shadow-lg")}
@@ -308,8 +317,8 @@ const SlotMachine = ({ config }) => {
 
   return (
     <div className="w-full max-w-[400px] mx-auto bg-[#050505] rounded-[3rem] shadow-2xl overflow-hidden min-h-[750px] flex flex-col border border-white/10">
-
-        {/* HEADER: Nombre en Blanco Brillante */}
+        
+        {/* HEADER: Nombre de marca VISIBLE */}
         <div className="bg-black/40 p-6 flex justify-between items-center border-b border-white/5">
            <div className="flex gap-1.5">{[1, 2, 3].map(i => (<Heart key={i} size={16} className={cn("transition-all", i <= attempts ? "text-rose-500 fill-rose-500" : "text-neutral-800")} />))}</div>
            <div className="flex items-center gap-3">
@@ -319,7 +328,7 @@ const SlotMachine = ({ config }) => {
                <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-neutral-400 hover:text-white transition-colors">{soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
            </div>
         </div>
-
+        
         <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8 relative">
           <div className="text-center space-y-2">
              <span className="text-3xl">{config.logoType === 'emoji' ? config.logoEmoji : '👑'}</span>
