@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, VolumeX, Heart, Zap, Gift, Trophy, Lock, Clock, Share2 } from 'lucide-react';
+import { Volume2, VolumeX, Heart, Zap, Gift, Trophy, Lock, Clock, Share2, AlertCircle } from 'lucide-react';
 import { cn } from '../utils/cn';
 import QRCode from "react-qr-code";
 import confetti from 'canvas-confetti';
@@ -16,25 +16,20 @@ const AUDIO_SRC = {
 const SlotMachine = ({ config }) => {
   const [gameState, setGameState] = useState('idle'); 
   const [email, setEmail] = useState('');
+  const [errorMsg, setErrorMsg] = useState(''); // Para mostrar error de mail duplicado
   const [attempts, setAttempts] = useState(3);
   const [reels, setReels] = useState(['7️⃣', '7️⃣', '7️⃣']);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [prizeLevel, setPrizeLevel] = useState('none');
   const [consolationPercent, setConsolationPercent] = useState(5);
 
-  // Referencias
-  const audioRefs = useRef({
-    spin: null,
-    win: null,
-    lose: null
-  });
+  const audioRefs = useRef({ spin: null, win: null, lose: null });
 
-  // INICIALIZACIÓN
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioRefs.current.spin = new Audio(AUDIO_SRC.spin);
       audioRefs.current.spin.loop = true; 
-      audioRefs.current.spin.volume = 0.2; // Volumen ambiente al inicio
+      audioRefs.current.spin.volume = 0.6;
 
       audioRefs.current.win = new Audio(AUDIO_SRC.win);
       audioRefs.current.win.volume = 1.0;
@@ -42,7 +37,6 @@ const SlotMachine = ({ config }) => {
       audioRefs.current.lose = new Audio(AUDIO_SRC.lose);
       audioRefs.current.lose.volume = 0.6;
 
-      // Precarga
       Object.values(audioRefs.current).forEach(audio => {
         if (audio) audio.load();
       });
@@ -58,15 +52,10 @@ const SlotMachine = ({ config }) => {
   };
   const expiryDate = getExpiryDate();
 
-  // --- REPRODUCTOR ---
   const playSound = (type) => {
     if (!soundEnabled) return;
     const audio = audioRefs.current[type];
     
-    // Si pedimos SPIN y ya está sonando, no lo reiniciamos (para que sea continuo desde el email)
-    if (type === 'spin' && !audio.paused) return;
-
-    // Detener otros sonidos
     Object.values(audioRefs.current).forEach(a => {
         if (a && a !== audio) {
             a.pause();
@@ -75,12 +64,9 @@ const SlotMachine = ({ config }) => {
     });
 
     if (audio) {
-        if (type !== 'spin') audio.currentTime = 0; // Reiniciar solo si no es spin
-        
+        if (type === 'spin') audio.currentTime = 0;
         const promise = audio.play();
-        if (promise !== undefined) {
-            promise.catch(e => console.log("Esperando interacción..."));
-        }
+        if (promise !== undefined) promise.catch(() => {});
     }
   };
 
@@ -92,22 +78,10 @@ const SlotMachine = ({ config }) => {
       }
   };
 
-  // Desbloqueo y ARRANQUE DE MOTOR AL TOCAR
-  const startEngine = () => {
-      // Desbloqueamos todos
+  const unlockAudio = () => {
       Object.values(audioRefs.current).forEach(audio => {
-          if (audio) {
-              audio.play().then(() => {
-                  // Si NO es el spin, lo pausamos inmediatamente (solo queremos desbloquear)
-                  if (audio !== audioRefs.current.spin) {
-                      audio.pause();
-                  }
-              }).catch(() => {});
-          }
+          if (audio) audio.play().then(() => audio.pause()).catch(() => {});
       });
-      
-      // Encendemos el motor explícitamente
-      playSound('spin');
   };
 
   const triggerConfetti = () => {
@@ -129,13 +103,35 @@ const SlotMachine = ({ config }) => {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
+  // --- LÓGICA DE BLOQUEO DE EMAIL ---
+  const checkAndSaveEmail = () => {
+    const storageKey = `played_emails_${config.brandName}`;
+    // Obtenemos la lista de emails que ya jugaron
+    const playedEmails = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    
+    if (playedEmails.includes(email.toLowerCase())) {
+        return false; // Ya jugó
+    }
+    
+    // Si es nuevo, lo guardamos
+    playedEmails.push(email.toLowerCase());
+    localStorage.setItem(storageKey, JSON.stringify(playedEmails));
+    return true;
+  };
+
   const handleSpin = (isRisking = false) => {
+    // 1. Verificar si el email ya jugó (Solo al inicio, no en el "Doble o Nada")
+    if (!isRisking) {
+        const isNewPlayer = checkAndSaveEmail();
+        if (!isNewPlayer) {
+            setErrorMsg('Este correo ya participó 🚫');
+            return; // DETENER TODO
+        }
+    }
+
     if (gameState === 'spinning' || attempts <= 0) return;
     
     setGameState('spinning');
-    
-    // Aseguramos que el sonido esté sonando (y subimos volumen si quieres)
-    if (audioRefs.current.spin) audioRefs.current.spin.volume = 0.8; // Más fuerte al girar
     playSound('spin');
 
     setTimeout(() => {
@@ -203,8 +199,7 @@ const SlotMachine = ({ config }) => {
              <div className="relative z-10">
                 <Zap className="mx-auto text-yellow-400 w-8 h-8 mb-2" />
                 <h3 className="text-lg font-bold text-white mb-1">¡Ganaste {config.prizeTextSmall}!</h3>
-                <p className="text-neutral-400 text-xs mb-5">¿Te retiras o arriesgas todo?</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 mt-4">
                   <button onClick={keepSmallPrize} className="py-3 bg-neutral-800 border border-white/5 rounded-xl text-xs font-bold text-neutral-300">RETIRARME</button>
                   <button onClick={() => handleSpin(true)} className="py-3 bg-yellow-500 text-black rounded-xl text-xs font-bold">ARRIESGAR</button>
                 </div>
@@ -257,7 +252,7 @@ const SlotMachine = ({ config }) => {
        );
     }
     return (
-      <div className="w-full space-y-3">
+      <div className="w-full space-y-3" onClick={unlockAudio} onTouchStart={unlockAudio}>
          {gameState === 'idle' && (
            <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -267,18 +262,27 @@ const SlotMachine = ({ config }) => {
                 type="email" 
                 placeholder="Ingresa tu email..." 
                 value={email} 
-                // AQUÍ ESTÁ LA CLAVE: AL TOCAR, ARRANCAN LOS MOTORES
-                onFocus={startEngine}
+                onFocus={() => { unlockAudio(); setErrorMsg(''); }} // Borrar error al escribir
                 onChange={(e) => setEmail(e.target.value)} 
-                className="w-full bg-[#0a0a0a] border border-white/10 text-white pl-10 pr-4 py-4 rounded-xl focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all shadow-inner" 
+                className={cn(
+                    "w-full bg-[#0a0a0a] border text-white pl-10 pr-4 py-4 rounded-xl outline-none text-sm transition-all shadow-inner",
+                    errorMsg ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-indigo-500"
+                )}
               />
            </div>
          )}
+         
+         {/* MENSAJE DE ERROR DE EMAIL */}
+         {errorMsg && (
+             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                <AlertCircle size={14} /> {errorMsg}
+             </motion.div>
+         )}
+
          {(gameState === 'idle' || gameState === 'ready') && (
            <button 
              onClick={() => { 
-               // Si ya estaba sonando, esto solo confirma
-               startEngine();
+               unlockAudio();
                if(gameState === 'idle') { 
                  if(isValidEmail) setGameState('ready'); 
                } else { 
@@ -298,9 +302,18 @@ const SlotMachine = ({ config }) => {
 
   return (
     <div className="w-full max-w-[400px] mx-auto bg-[#050505] rounded-[3rem] shadow-2xl overflow-hidden min-h-[750px] flex flex-col border border-white/10">
+        
+        {/* HEADER MODIFICADO: Nombre de marca brillante y visible */}
         <div className="bg-black/40 p-6 flex justify-between items-center border-b border-white/5">
            <div className="flex gap-1.5">{[1, 2, 3].map(i => (<Heart key={i} size={16} className={cn("transition-all", i <= attempts ? "text-rose-500 fill-rose-500" : "text-neutral-800")} />))}</div>
-           <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-neutral-600 hover:text-white">{soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
+           
+           <div className="flex items-center gap-3">
+               {/* AQUÍ ESTÁ EL CAMBIO DE VISIBILIDAD */}
+               <span className="text-sm font-bold text-white uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+                 {config.brandName}
+               </span>
+               <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-neutral-400 hover:text-white transition-colors">{soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+           </div>
         </div>
         
         <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8 relative">
