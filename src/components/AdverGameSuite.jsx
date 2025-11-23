@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Star, Percent, Gift, CalendarClock } from 'lucide-react';
 import Dashboard from './Dashboard';
 import SlotMachine from './SlotMachine';
-import LandingPage from './LandingPage'; // <--- IMPORTAMOS LA LANDING
+import LandingPage from './LandingPage';
 
 export default function AdverGameSuite() {
-  // Estados posibles: 'loading', 'landing', 'demo', 'admin', 'ticket'
   const [viewMode, setViewMode] = useState('loading'); 
   const [ticketData, setTicketData] = useState(null);
 
+  // Configuración Inicial
   const [config, setConfig] = useState({
     brandName: 'Neon Burger',
     prizeTextSmall: 'Papas Gratis',
@@ -16,19 +16,32 @@ export default function AdverGameSuite() {
     logoType: 'emoji',
     logoEmoji: '🍔',
     winProbability: 50,
-    legalText: 'Válido de Lunes a Jueves. No acumulable con otras promociones.'
+    legalText: 'Válido de Lunes a Jueves. No acumulable.'
   });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     
-    // 1. MODO ADMIN (Tú configurando)
+    // --- 1. LECTURA DE CONFIGURACIÓN DESDE LA URL (EL TRUCO MÁGICO) ---
+    // Si el link trae datos, sobreescribimos la configuración por defecto
+    if (params.has('brandName')) {
+       setConfig(prev => ({
+          ...prev,
+          brandName: params.get('brandName') || prev.brandName,
+          prizeTextSmall: params.get('prizeSmall') || prev.prizeTextSmall,
+          prizeTextBig: params.get('prizeBig') || prev.prizeTextBig,
+          logoEmoji: params.get('emoji') || prev.logoEmoji,
+          legalText: params.get('legal') || prev.legalText,
+          winProbability: params.get('prob') || prev.winProbability
+       }));
+    }
+
+    // --- 2. RUTEO ---
     if (params.get('admin') === 'true') {
       setViewMode('admin');
       return;
     }
 
-    // 2. MODO TICKET (Vendedor escaneando)
     if (params.get('mode') === 'ticket') {
       const discount = params.get('discount'); 
       const prize = params.get('prize');       
@@ -44,27 +57,18 @@ export default function AdverGameSuite() {
       return;
     }
 
-    // 3. SI EL CLIENTE YA COMPRÓ (Tiene un ID de juego propio)
-    // Para este MVP, asumimos que si la URL tiene ?client=algo, va directo al juego
-    if (params.get('client')) {
-        setViewMode('game_final'); // Muestra el juego directo
+    // Si tiene 'client=true' O si ya trajo configuración personalizada, vamos al juego
+    if (params.get('client') === 'true' || params.has('brandName')) {
+        setViewMode('game_final'); 
         return;
     }
 
-    // 4. POR DEFECTO: Mostrar Landing Page
     setViewMode('landing');
   }, []);
 
   if (viewMode === 'loading') return null;
 
-  // --- RENDERIZADO DE VISTAS ---
-
-  // A) LANDING PAGE
-  if (viewMode === 'landing') {
-      return <LandingPage onTryDemo={() => setViewMode('demo')} />;
-  }
-
-  // B) PANTALLA TICKET (VALIDACIÓN)
+  // --- MODO TICKET ---
   if (viewMode === 'ticket') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4 font-sans">
@@ -101,37 +105,34 @@ export default function AdverGameSuite() {
                 {ticketData?.type === 'percent' ? <Gift size={14}/> : <Star size={14} fill="currentColor" />}
                 <span>Autorizado para canje</span>
              </div>
-             <div className="absolute top-0 left-0 -mt-3 -ml-3 w-6 h-6 bg-black rounded-full" />
-             <div className="absolute top-0 right-0 -mt-3 -mr-3 w-6 h-6 bg-black rounded-full" />
            </div>
         </div>
       </div>
     );
   }
 
-  // C) MODO JUEGO (Demo, Final o Admin)
+  // --- MODO APP PRINCIPAL ---
+  if (viewMode === 'landing') {
+      return <LandingPage onTryDemo={() => setViewMode('demo')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 md:p-8 font-sans relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
       <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
 
-      {/* Botón volver a home si es Demo */}
       {viewMode === 'demo' && (
-          <button onClick={() => setViewMode('landing')} className="absolute top-6 left-6 z-50 text-xs text-neutral-500 hover:text-white flex items-center gap-2">
-             ← Volver al Inicio
-          </button>
+          <button onClick={() => setViewMode('landing')} className="absolute top-6 left-6 z-50 text-xs text-neutral-500 hover:text-white flex items-center gap-2">← Volver al Inicio</button>
       )}
 
       <div className={`max-w-7xl w-full grid gap-12 z-10 ${viewMode === 'admin' ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1 place-items-center'}`}>
         
-        {/* PANEL (Solo visible en Admin) */}
         {viewMode === 'admin' && (
           <div className="lg:col-span-4 order-2 lg:order-1 h-full w-full">
              <Dashboard config={config} setConfig={setConfig} />
           </div>
         )}
 
-        {/* JUEGO */}
         <div className={`${viewMode === 'admin' ? 'lg:col-span-8 order-1 lg:order-2' : 'w-full max-w-md'} flex justify-center items-center perspective-[2000px] min-h-[800px]`}>
            <SlotMachine config={config} />
         </div>

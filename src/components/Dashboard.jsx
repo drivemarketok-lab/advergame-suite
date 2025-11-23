@@ -1,11 +1,37 @@
-import React from 'react';
-import { Settings, Smartphone, Sparkles, RefreshCw, Percent, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, Smartphone, Sparkles, RefreshCw, Percent, FileText, Copy, Check } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 const Dashboard = ({ config, setConfig }) => {
+  const [copied, setCopied] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setConfig(prev => ({ ...prev, [name]: value }));
+  };
+
+  // --- FUNCIÓN MÁGICA: CREAR EL LINK ---
+  const generateClientLink = () => {
+    // Tomamos la URL base actual (sea localhost o vercel)
+    const baseUrl = window.location.origin;
+    
+    // Creamos los parámetros
+    const params = new URLSearchParams({
+        client: 'true',
+        brandName: config.brandName,
+        prizeSmall: config.prizeTextSmall,
+        prizeBig: config.prizeTextBig,
+        emoji: config.logoEmoji,
+        legal: config.legalText,
+        prob: config.winProbability
+    });
+
+    const fullUrl = `${baseUrl}/?${params.toString()}`;
+    
+    // Copiamos al portapapeles
+    navigator.clipboard.writeText(fullUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -62,29 +88,33 @@ const Dashboard = ({ config, setConfig }) => {
            <div className="flex justify-between text-[10px] text-neutral-500 font-medium uppercase"><span>Imposible</span><span>Justo</span><span>Regalo</span></div>
         </div>
 
-        {/* NUEVO: LEGALES */}
         <div className="space-y-2">
-            <span className="text-xs text-neutral-400 ml-1 flex items-center gap-1"><FileText size={12}/> Términos y Condiciones</span>
-            <textarea 
-              name="legalText" 
-              value={config.legalText} 
-              onChange={handleChange}
-              rows={3}
-              className="w-full bg-black/40 border border-white/5 text-white px-4 py-3 rounded-xl focus:border-white/20 outline-none transition-all placeholder:text-neutral-700 text-[10px] resize-none leading-relaxed"
-              placeholder="Ej: Válido solo para consumo en local..."
-            />
+            <span className="text-xs text-neutral-400 ml-1 flex items-center gap-1"><FileText size={12}/> Términos y Condiciones (Letra Chica)</span>
+            <textarea name="legalText" value={config.legalText} onChange={handleChange} rows={3} className="w-full bg-black/40 border border-white/5 text-white px-4 py-3 rounded-xl focus:border-white/20 outline-none transition-all placeholder:text-neutral-700 text-[10px] resize-none leading-relaxed" placeholder="Ej: Válido solo para consumo en local..." />
         </div>
 
       </div>
 
+      {/* --- BOTÓN IMPORTANTE DE COPIAR LINK --- */}
       <div className="mt-6 pt-4 border-t border-white/5 space-y-3">
-        <div className="flex items-center gap-3 px-4 py-3 bg-indigo-950/30 border border-indigo-500/20 rounded-xl">
-           <Smartphone className="text-indigo-400 shrink-0" size={16}/>
-           <p className="text-[10px] text-indigo-200/80 leading-relaxed">Vista previa activa. Los cambios se guardan automáticamente.</p>
-        </div>
-        <button onClick={() => { localStorage.removeItem(`advergame_${config.brandName}`); window.location.reload(); }} className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all text-[10px] font-bold uppercase tracking-widest hover:shadow-[0_0_15px_-5px_rgba(239,68,68,0.3)]">
-          <RefreshCw size={12} /> Resetear Juego
+        <button 
+          onClick={generateClientLink}
+          className={cn(
+             "w-full py-4 rounded-xl flex items-center justify-center gap-2 transition-all text-sm font-bold uppercase tracking-widest shadow-lg",
+             copied 
+               ? "bg-emerald-500 text-white shadow-emerald-500/20" 
+               : "bg-white text-black hover:bg-neutral-200"
+          )}
+        >
+          {copied ? <><Check size={16} /> Link Copiado</> : <><Copy size={16} /> Copiar Link para Instagram</>}
         </button>
+
+        <div className="flex items-center justify-between">
+            <p className="text-[10px] text-neutral-600">Configura y luego copia el link</p>
+            <button onClick={() => { localStorage.removeItem(`advergame_${config.brandName}`); window.location.reload(); }} className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1">
+              <RefreshCw size={10} /> Resetear
+            </button>
+        </div>
       </div>
     </div>
   );
