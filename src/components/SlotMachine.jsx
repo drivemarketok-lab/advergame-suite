@@ -89,7 +89,7 @@ const SlotMachine = ({ config = defaultConfig }) => {
     if (typeof window !== 'undefined') {
       audioRefs.current.spin = new Audio(AUDIO_SRC.spin);
       audioRefs.current.spin.loop = true; 
-      audioRefs.current.spin.volume = 0.5;
+      audioRefs.current.spin.volume = 0.3;
 
       audioRefs.current.win = new Audio(AUDIO_SRC.win);
       audioRefs.current.win.volume = 1.0;
