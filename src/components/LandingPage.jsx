@@ -42,7 +42,7 @@ const LandingPage = ({ onTryDemo }) => {
               <Play size={20} fill="black" /> Ver Demo en Vivo
             </button>
             {/* AQUÍ ES DONDE PONES TU LINK DE GUMROAD */}
-            <a href="#" className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
+            <a href="https://drivemarket.gumroad.com/l/advergame-suite" className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
               Comprar Licencia
             </a>
           </div>
