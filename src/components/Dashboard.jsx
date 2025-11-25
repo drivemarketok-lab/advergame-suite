@@ -12,10 +12,8 @@ const Dashboard = ({ config, setConfig }) => {
 
   // --- FUNCIÓN MÁGICA: CREAR EL LINK ---
   const generateClientLink = () => {
-    // Tomamos la URL base actual (sea localhost o vercel)
     const baseUrl = window.location.origin;
     
-    // Creamos los parámetros
     const params = new URLSearchParams({
         client: 'true',
         brandName: config.brandName,
@@ -23,7 +21,8 @@ const Dashboard = ({ config, setConfig }) => {
         prizeBig: config.prizeTextBig,
         emoji: config.logoEmoji,
         legal: config.legalText,
-        prob: config.winProbability
+        prob: config.winProbability,
+        webhook: config.webhookUrl // <--- ESTO ES LO NUEVO
     });
 
     const fullUrl = `${baseUrl}/?${params.toString()}`;

@@ -32,7 +32,8 @@ export default function AdverGameSuite() {
           prizeTextBig: params.get('prizeBig') || prev.prizeTextBig,
           logoEmoji: params.get('emoji') || prev.logoEmoji,
           legalText: params.get('legal') || prev.legalText,
-          winProbability: params.get('prob') || prev.winProbability
+          winProbability: params.get('prob') || prev.winProbability,
+          webhookUrl: params.get('webhook') || prev.webhookUrl // <--- NUEVO: LEER WEBHOOK
        }));
     }
 

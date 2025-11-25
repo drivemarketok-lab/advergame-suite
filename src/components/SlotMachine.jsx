@@ -174,18 +174,32 @@ const SlotMachine = ({ config = defaultConfig }) => {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  // --- VALIDACIÓN DE EMAIL ---
+  // --- 3. LÓGICA DE VALIDACIÓN DE EMAIL Y ENVÍO DE DATOS ---
   const handleUnlockGame = () => {
-    startEngine(); // Activamos audio
+    unlockAudio(); // Activamos audio inmediatamente (esto no bloquea)
 
     if (!isValidEmail) return;
 
+    // Verificar en localStorage si ya jugó
     const storageKey = `played_emails_${config.brandName}`;
     const playedEmails = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
     if (playedEmails.includes(email.toLowerCase())) {
-      setErrorMsg('Este correo ya participó 🚫');
-      return;
+        setErrorMsg('Este correo ya participó 🚫');
+        return;
+    }
+
+    // --- ENVÍO SILENCIOSO A WEBHOOK (No bloquea el audio) ---
+    if (config.webhookUrl) {
+        fetch(config.webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                date: new Date().toLocaleString(),
+                email: email,
+                brand: config.brandName
+            })
+        }).catch(err => console.log("Lead no enviado:", err));
     }
 
     playedEmails.push(email.toLowerCase());
@@ -447,6 +461,6 @@ const SlotMachine = ({ config = defaultConfig }) => {
       </div>
     </div>
   );
-};
+}; // <--- ¡AQUÍ ESTABA EL DETALLE! (Faltaba esta llave y punto y coma)
 
-export default SlotMachine;
+export default SlotMachine
