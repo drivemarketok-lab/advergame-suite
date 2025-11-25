@@ -161,8 +161,8 @@ const LandingPage = ({ onTryDemo }) => {
             </p>
             
             <div className="flex items-center justify-center gap-3 mb-8">
-              <span className="text-2xl text-neutral-500 line-through">$99</span>
-              <span className="text-6xl font-black text-white">$49</span>
+              <span className="text-2xl text-neutral-500 line-through">$14.99</span>
+              <span className="text-6xl font-black text-white">$9.99</span>
             </div>
 
             {/* BOTÓN DE GUMROAD REAL */}
