@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Zap, TrendingUp, Instagram, Smartphone, Gift, Shield, MousePointer, Users } from 'lucide-react';
+import { Play, CheckCircle, Zap, TrendingUp, Instagram, Smartphone, Gift, Shield, MousePointer, Users } from 'lucide-react';
 
 const LandingPage = ({ onTryDemo }) => {
   return (
@@ -25,7 +25,7 @@ const LandingPage = ({ onTryDemo }) => {
         
         <div className="relative z-10 space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-indigo-300 text-xs font-bold uppercase tracking-widest animate-fade-in">
-            <Zap size={14} fill="currentColor"/> La revolución del marketing en Instagram
+            <Zap size={14} fill="currentColor"/> La nueva forma de vender en Instagram
           </div>
           
           <h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-tight">
@@ -166,7 +166,7 @@ const LandingPage = ({ onTryDemo }) => {
 
             {/* BOTÓN DE GUMROAD REAL */}
             <a 
-              href="https://drivermarket.gumroad.com/l/advergame-suite" // <--- ASEGÚRATE QUE ESTE SEA TU LINK REAL
+              href="https://drivermarket.gumroad.com/l/advergame-suite" 
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block w-full md:w-auto px-12 py-5 bg-white text-black rounded-2xl font-black text-xl hover:scale-105 hover:bg-neutral-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]"
