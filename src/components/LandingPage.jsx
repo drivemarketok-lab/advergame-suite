@@ -54,7 +54,8 @@ const LandingPage = ({ onTryDemo }) => {
            <div className="space-y-6">
               <h2 className="text-3xl font-bold">El problema de las Historias de Instagram</h2>
               <p className="text-neutral-400 leading-relaxed">
-                Tus seguidores ven cientos de historias al día. Una foto estática con un "20% OFF" es invisible para ellos. Deslizan y se olvidan.
+                {/* AQUÍ ESTABA EL ERROR: He cambiado las comillas dobles por &quot; */}
+                Tus seguidores ven cientos de historias al día. Una foto estática con un &quot;20% OFF&quot; es invisible para ellos. Deslizan y se olvidan.
                 <br/><br/>
                 El resultado: <b>Muchos views, pocas ventas y cero datos de tus clientes.</b>
               </p>
@@ -166,7 +167,7 @@ const LandingPage = ({ onTryDemo }) => {
 
             {/* BOTÓN DE GUMROAD REAL */}
             <a 
-              href="https://drivermarket.gumroad.com/l/advergame-suite" 
+              href="https://drivermarket.gumroad.com/l/advergame" 
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block w-full md:w-auto px-12 py-5 bg-white text-black rounded-2xl font-black text-xl hover:scale-105 hover:bg-neutral-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]"
