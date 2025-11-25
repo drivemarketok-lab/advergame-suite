@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Smartphone, Sparkles, RefreshCw, Percent, FileText, Copy, Check } from 'lucide-react';
+import { Settings, Smartphone, Sparkles, RefreshCw, Percent, FileText, Copy, Check, Database } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 const Dashboard = ({ config, setConfig }) => {
@@ -92,7 +92,24 @@ const Dashboard = ({ config, setConfig }) => {
             <span className="text-xs text-neutral-400 ml-1 flex items-center gap-1"><FileText size={12}/> Términos y Condiciones (Letra Chica)</span>
             <textarea name="legalText" value={config.legalText} onChange={handleChange} rows={3} className="w-full bg-black/40 border border-white/5 text-white px-4 py-3 rounded-xl focus:border-white/20 outline-none transition-all placeholder:text-neutral-700 text-[10px] resize-none leading-relaxed" placeholder="Ej: Válido solo para consumo en local..." />
         </div>
-
+        
+{/* --- CAMPO DE BASE DE DATOS (WEBHOOK) --- */}
+        <div className="space-y-2">
+            <span className="text-xs text-neutral-400 ml-1 flex items-center gap-1">
+              <Database size={12}/> Link de Base de Datos (Webhook)
+            </span>
+            <input 
+              type="text" 
+              name="webhookUrl" 
+              value={config.webhookUrl || ''} 
+              onChange={handleChange} 
+              className="w-full bg-black/40 border border-white/5 text-white px-4 py-3 rounded-xl focus:border-indigo-500/50 outline-none transition-all placeholder:text-neutral-700 text-sm" 
+              placeholder="Ej: https://formspree.io/f/tu-id"
+            />
+            <p className="text-[9px] text-neutral-600 ml-1">
+              Pega aquí tu link de Formspree para recibir los emails.
+            </p>
+        </div>
       </div>
 
       {/* --- BOTÓN IMPORTANTE DE COPIAR LINK --- */}
