@@ -167,7 +167,7 @@ const LandingPage = ({ onTryDemo }) => {
 
             {/* BOTÓN DE GUMROAD REAL */}
             <a 
-              href="https://drivermarket.gumroad.com/l/advergame" 
+              href="https://drivemarket.gumroad.com/l/advergame-suite" 
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block w-full md:w-auto px-12 py-5 bg-white text-black rounded-2xl font-black text-xl hover:scale-105 hover:bg-neutral-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]"
