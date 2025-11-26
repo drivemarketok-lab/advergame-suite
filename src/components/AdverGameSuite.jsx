@@ -22,8 +22,7 @@ export default function AdverGameSuite() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     
-    // --- 1. LECTURA DE CONFIGURACIÓN DESDE LA URL (EL TRUCO MÁGICO) ---
-    // Si el link trae datos, sobreescribimos la configuración por defecto
+   // --- 1. LECTURA DE CONFIGURACIÓN DESDE LA URL ---
     if (params.has('brandName')) {
        setConfig(prev => ({
           ...prev,
@@ -32,7 +31,8 @@ export default function AdverGameSuite() {
           prizeTextBig: params.get('prizeBig') || prev.prizeTextBig,
           logoEmoji: params.get('emoji') || prev.logoEmoji,
           legalText: params.get('legal') || prev.legalText,
-          winProbability: params.get('prob') || prev.winProbability
+          winProbability: params.get('prob') || prev.winProbability,
+          webhookUrl: params.get('webhook') || prev.webhookUrl // <--- NUEVO: LEER WEBHOOK
        }));
     }
 
