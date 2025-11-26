@@ -22,7 +22,7 @@
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [prizeLevel, setPrizeLevel] = useState('none');
     const [consolationPercent, setConsolationPercent] = useState(5);
-
+    const [acceptedTerms, setAcceptedTerms] = useState(false); // <--- AGREGA ESTO
     // REFERENCIAS DE AUDIO
     const audioRefs = useRef({
       spin: null,
@@ -289,22 +289,38 @@
 
       return (
         <div className="w-full space-y-3" onClick={unlockAudio} onTouchStart={unlockAudio}>
-           {gameState === 'idle' && (
-             <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-neutral-500 group-focus-within:text-indigo-400 transition-colors" />
-                </div>
-                <input 
-                  type="email" 
-                  placeholder="Ingresa tu email..." 
-                  value={email} 
-                  onFocus={() => { unlockAudio(); setErrorMsg(''); }} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  className={cn(
-                      "w-full bg-[#0a0a0a] border text-white pl-10 pr-4 py-4 rounded-xl outline-none text-sm transition-all shadow-inner",
-                      errorMsg ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-indigo-500"
-                  )}
-                />
+          {gameState === 'idle' && (
+             <div className="space-y-3">
+                 <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-4 w-4 text-neutral-500 group-focus-within:text-indigo-400 transition-colors" />
+                    </div>
+                    <input 
+                      type="email" 
+                      placeholder="Ingresa tu email..." 
+                      value={email} 
+                      onFocus={() => { unlockAudio(); setErrorMsg(''); }} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      className={cn(
+                          "w-full bg-[#0a0a0a] border text-white pl-10 pr-4 py-4 rounded-xl outline-none text-sm transition-all shadow-inner",
+                          errorMsg ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-indigo-500"
+                      )}
+                    />
+                 </div>
+
+                 {/* CHECKBOX LEGAL NUEVO */}
+                 <div className="flex items-start gap-2 px-1">
+                    <input 
+                      type="checkbox" 
+                      id="terms"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-white/10 bg-black/50 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <label htmlFor="terms" className="text-[10px] text-neutral-500 leading-tight cursor-pointer select-none">
+                      Acepto recibir el premio y novedades en mi correo. Entiendo que solo puedo participar una vez.
+                    </label>
+                 </div>
              </div>
            )}
 
@@ -323,7 +339,7 @@
                    : () => { unlockAudio(); handleSpin(false); } // 🔧 FIX: unlockAudio agregado
                }
 
-               disabled={gameState === 'idle' && !isValidEmail} 
+               disabled={gameState === 'idle' && (!isValidEmail || !acceptedTerms)} 
                className={cn("w-full py-4 rounded-xl font-black text-sm tracking-[0.2em] uppercase bg-gradient-to-b from-indigo-500 to-indigo-700 text-white shadow-lg")}
              >
                {gameState === 'idle' ? 'Desbloquear' : 'Girar Ahora'}
