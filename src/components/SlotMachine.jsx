@@ -129,7 +129,6 @@ const SlotMachine = ({ config }) => {
     if (config.webhookUrl) {
         fetch(config.webhookUrl, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: new Date().toLocaleString(),
